@@ -2,6 +2,8 @@
 from dataclasses import dataclass
 from typing import Literal
 
+from core.types import DatabaseType
+
 
 @dataclass
 class OptimizerConfig:
@@ -11,7 +13,9 @@ class OptimizerConfig:
     model_name: str = "gemini-2.0-flash"
     temperature: float = 0.1
     max_output_tokens: int = 8192
-    api_key: str | None = None  # can be set via env vars
+    database_type: DatabaseType = DatabaseType.ORACLE
+    # API Keys (optional, can be set via environment variables)
+    api_key: str | None = None
 
     def get_default_model_for_provider(self) -> str:
         """Get default model name for the provider."""

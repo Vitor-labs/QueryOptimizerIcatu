@@ -1,9 +1,9 @@
-# src/core/interfaces.py
+# src/core/interfaces.py (updated)
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
-from core.types import OptimizationResult, QueryMetadata
+from core.types import DatabaseType, OptimizationResult, QueryMetadata
 
 
 class LLMClient(ABC):
@@ -54,4 +54,23 @@ class QueryOptimizer(ABC):
     @abstractmethod
     async def optimize_query(self, sql_file_path: Path) -> OptimizationResult:
         """Optimize a SQL query from file."""
+        pass
+
+
+class PromptGenerator(ABC):
+    """Abstract interface for generating database-specific prompts."""
+
+    @abstractmethod
+    def generate_sql_to_natural_prompt(self, sql_query: str) -> str:
+        """Generate prompt for SQL to natural language conversion."""
+        pass
+
+    @abstractmethod
+    def generate_natural_to_sql_prompt(self, explanation: str) -> str:
+        """Generate prompt for natural language to SQL conversion."""
+        pass
+
+    @abstractmethod
+    def get_database_type(self) -> DatabaseType:
+        """Get the database type this generator supports."""
         pass
