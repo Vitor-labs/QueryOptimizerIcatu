@@ -1,0 +1,24 @@
+[project]
+name = "oracle-query-optimizer"
+version = "1.0.0"
+description = "Oracle SQL Query Optimizer using LLM"
+authors = [{name = "Vitor Duarte", email = "vitor02hugo@alu.ufc.br"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "anthropic>=0.25.0",
+    "google-generativeai>=0.3.0",
+    "openai>=1.0.0",
+    "typer>=0.9.0",
+    "python-dotenv>=1.0.0",
+    "structlog>=23.0.0",
+    "google-genai>=1.25.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+]
