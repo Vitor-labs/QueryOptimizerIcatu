@@ -1,0 +1,9 @@
+{
+  "76c91f8e975289fc": {
+    "query_sql": "-- example_queries/simple_select.sql\nSELECT \n    employee_id,\n    first_name,\n    last_name,\n    salary,\n    department_id\nFROM employees\nWHERE salary > 50000\n    AND salary > 40000 -- added redundancy for testing purpose\n    AND salary > 30000 -- added redundancy for testing purpose\n    AND department_id IN (10, 20, 30)\nORDER BY salary DESC;",
+    "explanation_text": "This SQL query retrieves information about employees from the `employees` table. It selects the employee's ID, first name, last name, salary, and department ID. The query filters the results to include only employees whose salary is greater than 50000 (and redundantly also greater than 40000 and 30000) and who work in departments with IDs 10, 20, or 30. Finally, the results are ordered by salary in descending order, meaning the highest salaries appear first.\n",
+    "version": "0.1",
+    "last_optimization": "2025-07-10T22:19:26.036605",
+    "database_type": "sqlite"
+  }
+}
