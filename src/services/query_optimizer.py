@@ -1,6 +1,6 @@
 # src/services/query_optimizer.py (updated)
-import hashlib
 from datetime import datetime
+from hashlib import sha256
 from pathlib import Path
 
 from config.config import OptimizerConfig
@@ -124,6 +124,6 @@ class DatabaseQueryOptimizer(QueryOptimizer):
 
     def _generate_query_hash(self, query: str) -> str:
         """Generate hash for SQL query including database type."""
-        return hashlib.sha256(
+        return sha256(
             f"{self._database_type.value}:{query}".encode("utf-8")
         ).hexdigest()[:16]

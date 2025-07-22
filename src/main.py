@@ -1,7 +1,6 @@
 # src/main.py (updated)
 import asyncio
 import sys
-from os import environ
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -58,7 +57,7 @@ async def _optimize_async(
         config = OptimizerConfig(
             provider=provider,
             database_type=database_type,
-            api_key=environ["GOOGLE_API_KEY"],
+            api_key=LLMClientFactory._get_api_key_from_env("gemini"),
         )
         if model:
             config.model_name = model
