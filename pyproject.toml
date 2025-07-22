@@ -1,11 +1,16 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "oracle-query-optimizer"
-version = "1.0.0"
+name = "sql-query-optimizer"
+dynamic = ["version"]
 description = "Oracle SQL Query Optimizer using LLM"
 authors = [{name = "Vitor Duarte", email = "vitor02hugo@alu.ufc.br"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.12"
+keywords = ["sql", "optimization", "oracle", "sqlite", "ai", "llm"]
 
 dependencies = [
     "anthropic>=0.25.0",
@@ -21,4 +26,24 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+]
+build = [
+    "pyinstaller>=5.13.0",
+    "setuptools>=68.0.0",
+    "cx-freeze>=6.0.0",
+    "wheel>=0.41.0",
+]
+
+[project.scripts]
+sql-optimizer = "main:app"
+sqlo = "main:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
 ]

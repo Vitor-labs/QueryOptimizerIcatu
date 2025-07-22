@@ -1,1 +1,5 @@
 .env
+
+
+**.pyc
+src/sql_query_optimizer.egg-info
