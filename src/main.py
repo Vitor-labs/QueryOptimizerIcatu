@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from typer import Argument, Choice, Option, Typer
+from typer import Argument, Option, Typer
 
 from config.config import OptimizerConfig
 from config.logger import logger
@@ -22,11 +22,7 @@ app = Typer(help="Database SQL Query Optimizer")
 @app.command()
 def optimize(
     sql_file: Path = Argument(..., help="Path to SQL file to optimize"),
-    database: str = Option(
-        "oracle",
-        help="Database type (oracle/sqlite)",
-        click_type=Choice(["oracle", "sqlite"], case_sensitive=False),
-    ),
+    database: str = Option("oracle", help="Database type (oracle/sqlite)"),
     provider: str = Option("gemini", help="LLM provider (gemini/openai/claude)"),
     model: str | None = Option(None, help="Model name to use"),
     api_key: str | None = Option(None, help="API key for LLM provider"),
@@ -58,8 +54,11 @@ async def _optimize_async(
     """Async optimization implementation."""
     try:
         database_type = DatabaseType(database.lower())
-        config = OptimizerConfig(provider=provider, database_type=database_type)
-
+        config = OptimizerConfig(
+            provider=provider,
+            database_type=database_type,
+            api_key=LLMClientFactory._get_api_key_from_env("gemini"),
+        )
         if model:
             config.model_name = model
 
