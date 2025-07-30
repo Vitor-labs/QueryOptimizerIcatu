@@ -1,17 +1,17 @@
-# src/services/query_optimizer.py
-import hashlib
+# src/services/query_optimizer.py (updated)
 from datetime import datetime
+from hashlib import sha256
 from pathlib import Path
 
 from config.config import OptimizerConfig
 from config.logger import logger
 from core.interfaces import FileHandler, LLMClient, MetadataRepository, QueryOptimizer
-from core.types import OptimizationResult, QueryMetadata
-from services.prompt_generator import PromptGenerator
+from core.types import DatabaseType, OptimizationResult, QueryMetadata
+from services.prompt_generator import PromptGeneratorFactory
 
 
-class OracleQueryOptimizer(QueryOptimizer):
-    """Oracle-focused query optimizer implementation."""
+class DatabaseQueryOptimizer(QueryOptimizer):
+    """Database-agnostic query optimizer implementation."""
 
     def __init__(
         self,
@@ -19,17 +19,21 @@ class OracleQueryOptimizer(QueryOptimizer):
         file_handler: FileHandler,
         metadata_repo: MetadataRepository,
         config: OptimizerConfig,
+        database_type: DatabaseType,
     ) -> None:
         """Initialize optimizer with dependencies."""
         self._llm_client = llm_client
         self._file_handler = file_handler
         self._metadata_repo = metadata_repo
         self._config = config
-        self._prompt_generator = PromptGenerator()
+        self._database_type = database_type
+        self._prompt_generator = PromptGeneratorFactory.create_generator(database_type)
 
     async def optimize_query(self, sql_file_path: Path) -> OptimizationResult:
         """Optimize a SQL query from file."""
-        logger.info(f"Starting optimization for: {sql_file_path}")
+        logger.info(
+            f"Starting {self._database_type.value.upper()} optimization for: {sql_file_path}"
+        )
         try:
             original_query = await self._file_handler.read_sql_file(sql_file_path)
             query_hash = self._generate_query_hash(original_query)
@@ -43,19 +47,25 @@ class OracleQueryOptimizer(QueryOptimizer):
 
             metadata.explanation_text = explanation
             metadata.last_optimization = datetime.now()
+            metadata.database_type = self._database_type
+
             await self._metadata_repo.save_metadata(query_hash, metadata)
             await self._generate_output_json(sql_file_path, metadata)
 
-            logger.info("Optimization completed successfully")
+            logger.info(
+                f"{self._database_type.value.upper()} optimization completed successfully"
+            )
             return OptimizationResult(
                 original_query=original_query,
                 explained_query=explanation,
                 optimized_query=optimized_query,
                 metadata=metadata,
+                database_type=self._database_type,
             )
-
         except Exception as e:
-            logger.error(f"Error during optimization: {str(e)}")
+            logger.error(
+                f"Error during {self._database_type.value} optimization: {str(e)}"
+            )
             raise
 
     async def _sql_to_natural_language(self, sql_query: str) -> str:
@@ -89,14 +99,15 @@ class OracleQueryOptimizer(QueryOptimizer):
             version_parts = existing_metadata.version.split(".")
             version_parts[-1] = str(int(version_parts[-1]) + 1)
             existing_metadata.version = ".".join(version_parts)
+            existing_metadata.database_type = self._database_type  # Update if changed
             return existing_metadata
 
-        # Create new metadata
         return QueryMetadata(
             query_sql=query,
             explanation_text="",
             version="0.0",
             last_optimization=datetime.now(),
+            database_type=self._database_type,
         )
 
     async def _generate_output_json(
@@ -104,10 +115,15 @@ class OracleQueryOptimizer(QueryOptimizer):
     ) -> None:
         """Generate JSON output file."""
         await self._file_handler.write_json_file(
-            sql_file_path.parent / f"{sql_file_path.stem}_optimization.json",
+            (
+                sql_file_path.parent
+                / f"{sql_file_path.stem}_{self._database_type.value}_optimization.json"
+            ),
             metadata.to_dict(),
         )
 
     def _generate_query_hash(self, query: str) -> str:
-        """Generate hash for SQL query."""
-        return hashlib.sha256(query.encode("utf-8")).hexdigest()[:16]
+        """Generate hash for SQL query including database type."""
+        return sha256(
+            f"{self._database_type.value}:{query}".encode("utf-8")
+        ).hexdigest()[:16]

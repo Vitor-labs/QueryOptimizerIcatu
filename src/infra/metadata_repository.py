@@ -6,7 +6,7 @@ from pathlib import Path
 
 from config.logger import logger
 from core.interfaces import MetadataRepository
-from core.types import QueryMetadata
+from core.types import DatabaseType, QueryMetadata
 
 
 class JsonMetadataRepository(MetadataRepository):
@@ -20,9 +20,11 @@ class JsonMetadataRepository(MetadataRepository):
         self._metadata_cache: dict[str, QueryMetadata] = {}
         self._load_metadata()
 
-    def _generate_query_hash(self, query: str) -> str:
-        """Generate hash for SQL query."""
-        return hashlib.sha256(query.encode("utf-8")).hexdigest()[:16]
+    def _generate_query_hash(self, query: str, database_type: DatabaseType) -> str:
+        """Generate hash for SQL query including database type."""
+        return hashlib.sha256(
+            f"{database_type.value}:{query}".encode("utf-8")
+        ).hexdigest()[:16]
 
     def _load_metadata(self) -> None:
         """Load metadata from storage."""
@@ -31,12 +33,16 @@ class JsonMetadataRepository(MetadataRepository):
                 for query_hash, metadata_dict in json.loads(
                     self._storage_path.read_text(encoding="utf-8")
                 ).items():
+                    # Handle backward compatibility for database_type
                     self._metadata_cache[query_hash] = QueryMetadata(
                         query_sql=metadata_dict["query_sql"],
                         explanation_text=metadata_dict["explanation_text"],
                         version=metadata_dict["version"],
                         last_optimization=datetime.fromisoformat(
                             metadata_dict["last_optimization"]
+                        ),
+                        database_type=DatabaseType(
+                            metadata_dict.get("database_type", "oracle")
                         ),
                     )
                 logger.info(f"Loaded {len(self._metadata_cache)} metadata entries")
@@ -64,15 +70,15 @@ class JsonMetadataRepository(MetadataRepository):
             logger.error(f"Error saving metadata: {str(e)}")
             raise
 
-    def generate_hash_for_query(self, query: str) -> str:
+    def generate_hash_for_query(self, query: str, database_type: DatabaseType) -> str:
         """Generate hash for a SQL query (public method)."""
-        return self._generate_query_hash(query)
+        return self._generate_query_hash(query, database_type)
 
     async def get_metadata(self, query_hash: str) -> QueryMetadata | None:
-        """Retrieve metadata for a query."""
+        """Retrieve metadata for a query (public method)."""
         return self._metadata_cache.get(query_hash)
 
     async def save_metadata(self, query_hash: str, metadata: QueryMetadata) -> None:
-        """Save metadata for a query."""
+        """Save metadata for a query (public method)."""
         self._metadata_cache[query_hash] = metadata
         self._save_metadata()

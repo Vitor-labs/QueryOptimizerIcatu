@@ -1,4 +1,4 @@
-# src/core/types.py
+# src/core/types.py (updated)
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -11,6 +11,13 @@ class OptimizationStage(Enum):
     NATURAL_TO_SQL = "natural_to_sql"
 
 
+class DatabaseType(Enum):
+    """Supported database types."""
+
+    ORACLE = "oracle"
+    SQLITE = "sqlite"
+
+
 @dataclass
 class QueryMetadata:
     """Metadata for a SQL query optimization."""
@@ -19,6 +26,7 @@ class QueryMetadata:
     explanation_text: str
     version: str
     last_optimization: datetime
+    database_type: DatabaseType
 
     def to_dict(self) -> dict[str, str]:
         """Convert to dictionary for JSON serialization."""
@@ -27,6 +35,7 @@ class QueryMetadata:
             "explanation_text": self.explanation_text,
             "version": self.version,
             "last_optimization": self.last_optimization.isoformat(),
+            "database_type": self.database_type.value,
         }
 
 
@@ -38,3 +47,4 @@ class OptimizationResult:
     explained_query: str
     optimized_query: str
     metadata: QueryMetadata
+    database_type: DatabaseType
