@@ -1,5 +1,5 @@
-# src/main.py (updated)
 import asyncio
+import os
 import sys
 from pathlib import Path
 
@@ -54,13 +54,30 @@ async def _optimize_async(
     """Async optimization implementation."""
     try:
         database_type = DatabaseType(database.lower())
-        config = OptimizerConfig(
-            provider=provider,
-            database_type=database_type,
-            api_key=LLMClientFactory._get_api_key_from_env("gemini"),
+        config = (
+            OptimizerConfig(
+                provider=provider,
+                database_type=database_type,
+                model_name=model or "cohere.command",
+                max_output_tokens=4000,
+                extra={
+                    "compartment_id": os.getenv("OCI_COMPARTMENT_ID", ""),
+                    "model_id": os.getenv("OCI_MODEL_ID", "cohere.command"),
+                    "endpoint": os.getenv(
+                        "OCI_GENAI_ENDPOINT",
+                        "https://inference.generativeai.sa-saopaulo-1.oci.oraclecloud.com",
+                    ),
+                    "oci_profile": os.getenv("OCI_PROFILE", "DEFAULT"),
+                },
+            )
+            if provider == "oracle_genai"
+            else OptimizerConfig(
+                provider=provider,
+                database_type=database_type,
+                api_key=api_key or LLMClientFactory._get_api_key_from_env(provider),
+                model_name=model or None,
+            )
         )
-        if model:
-            config.model_name = model
 
         result = await DatabaseQueryOptimizer(
             llm_client=LLMClientFactory.create_client(config, api_key),
@@ -104,14 +121,32 @@ async def _compare_async(
         print("=" * 60)
 
         results = {}
-
         # Optimize for both database types
         for db_type in [DatabaseType.ORACLE, DatabaseType.SQLITE]:
             print(f"\n⚙️  Optimizing for {db_type.value.upper()}...")
-            config = OptimizerConfig(provider=provider, database_type=db_type)
-
-            if model:
-                config.model_name = model
+            if provider == "oracle_genai":
+                config = OptimizerConfig(
+                    provider=provider,
+                    database_type=db_type,
+                    model_name=model or "cohere.command",
+                    max_output_tokens=4000,
+                    extra={
+                        "compartment_id": os.getenv("OCI_COMPARTMENT_ID", ""),
+                        "model_id": os.getenv("OCI_MODEL_ID", "cohere.command"),
+                        "endpoint": os.getenv(
+                            "OCI_GENAI_ENDPOINT",
+                            "https://inference.generativeai.sa-saopaulo-1.oci.oraclecloud.com",
+                        ),
+                        "oci_profile": os.getenv("OCI_PROFILE", "DEFAULT"),
+                    },
+                )
+            else:
+                config = OptimizerConfig(
+                    provider=provider,
+                    database_type=db_type,
+                    api_key=api_key or LLMClientFactory._get_api_key_from_env(provider),
+                    model_name=model or None,
+                )
 
             results[db_type] = await DatabaseQueryOptimizer(
                 llm_client=LLMClientFactory.create_client(config, api_key),

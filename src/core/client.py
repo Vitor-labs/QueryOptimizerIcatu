@@ -1,5 +1,6 @@
 # src/llm/clients.py
 import os
+import re
 from typing import Any
 
 from anthropic import Anthropic
@@ -8,6 +9,7 @@ from openai import OpenAI
 
 from config.config import OptimizerConfig
 from config.logger import logger
+from config.oci.oci_genai_client import OCIOracleGenAIClient
 from core.interfaces import LLMClient
 
 
@@ -97,6 +99,38 @@ class AnthropicLLMClient(LLMClient):
         return "claude"
 
 
+class OracleGenAILLMClient(LLMClient):
+    def __init__(
+        self, config_profile: str, compartment_id: str, model_id: str, endpoint: str
+    ) -> None:
+        self._client = OCIOracleGenAIClient(
+            config_profile=config_profile,
+            compartment_id=compartment_id,
+            model_id=model_id,
+            endpoint=endpoint,
+        )
+
+    async def generate_response(self, prompt: str, config: dict[str, Any]) -> str:
+        try:
+            raw_response = self._client.generate_chat_response(prompt, config)
+
+            # ✅ Remove blocos ```sql e ``` de markdown
+            cleaned = re.sub(
+                r"^```sql\s*|```$",
+                "",
+                raw_response.strip(),
+                flags=re.IGNORECASE | re.MULTILINE,
+            )
+
+            return cleaned
+        except Exception as e:
+            logger.error(f"Error generating Oracle GenAI response: {str(e)}")
+            raise RuntimeError("Oracle GenAI failure") from e
+
+    def get_provider_name(self) -> str:
+        return "oracle_genai"
+
+
 class LLMClientFactory:
     """Factory for creating LLM clients."""
 
@@ -120,6 +154,23 @@ class LLMClientFactory:
             return OpenAILLMClient(OpenAI(api_key=effective_api_key))
         elif config.provider == "claude":
             return AnthropicLLMClient(Anthropic(api_key=effective_api_key))
+        elif config.provider == "oracle_genai":
+            compartment_id = config.extra.get("compartment_id")
+            model_id = config.extra.get("model_id")
+            endpoint = config.extra.get("endpoint")
+            config_profile = config.extra.get("oci_profile", "DEFAULT")
+
+            if not all([compartment_id, model_id, endpoint]):
+                raise ValueError(
+                    "Missing Oracle GenAI parameters: compartment_id, model_id or endpoint."
+                )
+
+            return OracleGenAILLMClient(
+                config_profile=config_profile,
+                compartment_id=compartment_id,
+                model_id=model_id,
+                endpoint=endpoint,
+            )
         else:
             raise ValueError(f"Unsupported LLM provider: {config.provider}")
 
