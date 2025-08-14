@@ -3,4 +3,6 @@
 **.pyc
 **.pem
 
-src/sql_query_optimizer.egg-info
+__pycache__/
+*.py[cod]
+*.egg-info/

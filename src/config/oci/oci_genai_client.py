@@ -1,7 +1,7 @@
 # src/config/oci/oci_genai_client.py
 
 import os
-from typing import Any, LiteralString
+from typing import Any
 
 import oci
 
@@ -12,17 +12,13 @@ class OCIOracleGenAIClient:
     """Wrapper for Oracle Generative AI using OCI SDK."""
 
     def __init__(
-        self,
-        config_profile: str,
-        compartment_id: str,
-        model_id: str,
-        endpoint: str,
+        self, config_profile: str, compartment_id: str, model_id: str, endpoint: str
     ):
         self.compartment_id = compartment_id
         self.model_id = model_id
-
-        config_path: LiteralString = os.path.join("src", "config", "oci", "config")
-        self.oci_config = oci.config.from_file(config_path, config_profile)
+        self.oci_config = oci.config.from_file(
+            os.path.join("src", "config", "oci", "config"), config_profile
+        )
         self.client = oci.generative_ai_inference.GenerativeAiInferenceClient(
             config=self.oci_config,
             service_endpoint=endpoint,
