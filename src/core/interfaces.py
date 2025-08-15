@@ -74,3 +74,57 @@ class PromptGenerator(ABC):
     def get_database_type(self) -> DatabaseType:
         """Get the database type this generator supports."""
         pass
+
+
+class DatabaseConnection(ABC):
+    """Abstract interface for database connections."""
+
+    @abstractmethod
+    async def connect(self) -> None:
+        """Establish database connection."""
+        pass
+
+    @abstractmethod
+    async def disconnect(self) -> None:
+        """Close database connection."""
+        pass
+
+    @abstractmethod
+    async def execute_query(self, query: str) -> list[dict[str, Any]]:
+        """Execute a query and return results."""
+        pass
+
+    @abstractmethod
+    async def measure_query_performance(self, query: str, iterations: int = 3) -> float:
+        """Measure query execution time in milliseconds."""
+        pass
+
+    @abstractmethod
+    def get_database_type(self) -> DatabaseType:
+        """Get the database type."""
+        pass
+
+
+class QueryValidator(ABC):
+    """Abstract interface for query validation and comparison."""
+
+    @abstractmethod
+    async def validate_queries_equivalent(
+        self,
+        original_query: str,
+        optimized_query: str,
+        db_connection: DatabaseConnection,
+    ) -> bool:
+        """Validate that two queries produce equivalent results."""
+        pass
+
+    @abstractmethod
+    async def compare_performance(
+        self,
+        original_query: str,
+        optimized_query: str,
+        db_connection: DatabaseConnection,
+        iterations: int = 3,
+    ) -> dict[str, float]:
+        """Compare performance of two queries."""
+        pass

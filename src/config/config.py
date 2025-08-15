@@ -32,3 +32,12 @@ class OptimizerConfig:
         """Post-initialization to set default model if not specified."""
         if self.model_name == "gemini-2.0-flash" and self.provider != "gemini":
             self.model_name = self.get_default_model_for_provider()
+
+        # Set default database connection parameters
+        if self.database_connection_params is None:
+            if self.database_type == DatabaseType.SQLITE:
+                self.database_connection_params = {"database_path": "./database.db"}
+            elif self.database_type == DatabaseType.ORACLE:
+                self.database_connection_params = {
+                    "connection_string": "user/password@localhost:1521/XE"
+                }
