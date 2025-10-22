@@ -1,0 +1,6 @@
+[DEFAULT]
+user=<ocid_user>
+fingerprint=<user_fingerprint>
+tenancy=<ocid_tenancy>
+region=sa-saopaulo-1
+key_file=/path/to/private_key.pem
